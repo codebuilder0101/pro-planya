@@ -96,6 +96,7 @@ function useInvalidateExperience() {
       queryClient.invalidateQueries({ queryKey: queryKeys.experience(id) }),
       queryClient.invalidateQueries({ queryKey: queryKeys.participants(id) }),
       queryClient.invalidateQueries({ queryKey: ['experiences', 'list'] }),
+      queryClient.invalidateQueries({ queryKey: ['bookings'] }),
     ])
 }
 
@@ -205,5 +206,38 @@ export function useExperiencePhotos(id: string) {
       return data
     },
     enabled: id.length > 0,
+  })
+}
+
+// ---------------------------------------------------------------- "Mis favoritas"
+export type FavoritePlan = Omit<ExperienceCard, 'lat' | 'lng'>
+
+const FAVORITE_PLAN_COLUMNS =
+  'id, host_id, title, category_id, comuna, starts_at, ends_at, capacity, seats_taken, is_free, price_clp, cover_url, is_featured, rating_avg, rating_count, status'
+
+/**
+ * Saved plans that can still be joined (published and not ended), soonest first.
+ * Keyed under favoriteIds, so toggling a heart refreshes it.
+ */
+export function useFavoritePlans() {
+  const userId = useUserId()
+  return useQuery({
+    queryKey: [...queryKeys.favoriteIds(userId), 'plans'],
+    queryFn: async (): Promise<FavoritePlan[]> => {
+      const { data, error } = await supabase
+        .from('favorites')
+        .select(`created_at, experience:experiences(${FAVORITE_PLAN_COLUMNS})`)
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(100)
+      if (error) throw error
+      const now = Date.now()
+      return data
+        .flatMap((f) => (f.experience ? [f.experience] : []))
+        .filter((e) => e.status === 'published' && new Date(e.ends_at).getTime() > now)
+        .sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime())
+        .map(({ status: _status, ...e }) => ({ ...e, distance_km: null }))
+    },
+    enabled: userId.length > 0,
   })
 }

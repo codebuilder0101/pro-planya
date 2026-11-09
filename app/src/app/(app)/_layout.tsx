@@ -26,6 +26,8 @@ export default function AppLayout() {
         <Stack.Screen name="plan/new" options={{ title: 'Publicar plan' }} />
         <Stack.Screen name="plan/[id]/edit" options={{ title: 'Editar plan' }} />
         <Stack.Screen name="chats" options={{ title: 'Mensajes' }} />
+        <Stack.Screen name="favorites" options={{ title: 'Mis favoritas' }} />
+        <Stack.Screen name="blocked" options={{ title: 'Usuarios bloqueados' }} />
         <Stack.Screen name="chats/[id]" options={{ title: '' }} />
         {/* Bottom sheets (native form sheets): join and filters. */}
         <Stack.Screen
@@ -45,6 +47,17 @@ export default function AppLayout() {
             headerShown: false,
             presentation: 'formSheet',
             sheetAllowedDetents: [0.85],
+            sheetGrabberVisible: true,
+            sheetCornerRadius: shape.sheet,
+            contentStyle: { backgroundColor: colors.surface },
+          }}
+        />
+        <Stack.Screen
+          name="report"
+          options={{
+            headerShown: false,
+            presentation: 'formSheet',
+            sheetAllowedDetents: [0.9],
             sheetGrabberVisible: true,
             sheetCornerRadius: shape.sheet,
             contentStyle: { backgroundColor: colors.surface },

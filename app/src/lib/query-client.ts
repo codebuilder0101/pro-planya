@@ -50,4 +50,6 @@ export const queryKeys = {
   conversations: (userId: string) => ['conversations', 'list', userId] as const,
   conversation: (id: string) => ['conversations', 'detail', id] as const,
   messages: (conversationId: string) => ['messages', conversationId] as const,
+  /** Explorer "Reservas" (the realtime sync and join/cancel invalidate ['bookings']). */
+  myBookings: (userId: string) => ['bookings', userId] as const,
 }

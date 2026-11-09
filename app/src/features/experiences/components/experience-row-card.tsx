@@ -18,7 +18,7 @@ import { statusBadge } from './experience-card'
 const IMAGE_WIDTH = 128
 
 type Props = {
-  item: Experience
+  item: Omit<Experience, 'lat' | 'lng'>
   category: Category | undefined
   saved: boolean
   onToggleSave: (next: boolean) => void

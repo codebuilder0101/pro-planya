@@ -36,6 +36,8 @@ import { statusBadge } from '@/features/experiences/components/experience-card'
 import { useStartConversation } from '@/features/chat/api'
 import { useFavorites } from '@/features/experiences/use-favorites'
 import { useMyProfile, useUserId } from '@/features/profile/api'
+import { useBlockUser } from '@/features/safety/api'
+import { openSafetyMenu } from '@/features/safety/safety-menu'
 import { capitalize, formatDuration, formatLongDate, formatTimeRange } from '@/lib/dates'
 import { toUserMessage } from '@/lib/errors'
 import { formatDistanceKm, formatPrice, formatSeatsLeft, seatsLeft } from '@/lib/format'
@@ -138,18 +140,42 @@ export default function ExperienceDetailScreen() {
 
 function TopActions({ experience: e }: { experience: ExperienceDetail }) {
   const favorites = useFavorites()
+  const userId = useUserId()
+  const block = useBlockUser()
+  const isOwn = e.host_id === userId
+
   const share = () => {
     const url = Linking.createURL(`/experience/${e.id}`)
-    Share.share(
-      Platform.OS === 'ios'
-        ? { message: `${e.title} en PlanYá`, url }
-        : { message: `${e.title} en PlanYá\n${url}` },
-    ).catch(() => undefined)
+    const start = new Date(e.starts_at)
+    const when = `${capitalize(formatLongDate(start))} · ${formatTimeRange(start, new Date(e.ends_at))}`
+    const price = formatPrice(e.is_free, e.price_clp)
+    const text = `${e.title}\n${when}\n${e.comuna} · ${price}\n\nMíralo en PlanYá: ${url}`
+    Share.share(Platform.OS === 'ios' ? { message: text } : { message: text, title: e.title }).catch(
+      () => undefined,
+    )
   }
+
+  const more = () =>
+    openSafetyMenu({
+      report: { type: 'experience', id: e.id, label: 'Reportar plan' },
+      block: isOwn ? undefined : { userId: e.host_id, name: e.host_full_name },
+      onBlock: (id) => block.mutateAsync(id),
+      afterBlock: () => router.back(),
+    })
+
   return (
     <View style={styles.topActions}>
       <IconButton icon="share-outline" variant="glass" accessibilityLabel="Compartir plan" onPress={share} />
       <HeartButton saved={favorites.ids.has(e.id)} onToggle={(next) => favorites.setSaved(e.id, next)} />
+      {isOwn ? null : (
+        <IconButton
+          icon="ellipsis-horizontal"
+          variant="glass"
+          accessibilityLabel="Más opciones"
+          onPress={more}
+          testID="detail-more"
+        />
+      )}
     </View>
   )
 }

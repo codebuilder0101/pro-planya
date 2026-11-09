@@ -22,12 +22,26 @@ import {
   type Message,
 } from '@/features/chat/api'
 import { useUserId } from '@/features/profile/api'
+import { useBlockUser } from '@/features/safety/api'
+import { openSafetyMenu } from '@/features/safety/safety-menu'
 import { formatChatDay, formatTime, toDateString } from '@/lib/dates'
 import { colors, radius, screenMargin, spacing, typography } from '@/theme/tokens'
 
 export default function ChatScreen() {
   const { id = '' } = useLocalSearchParams<{ id: string }>()
   const conversation = useConversation(id)
+  const block = useBlockUser()
+  const info = conversation.data
+
+  const more = () => {
+    if (!info) return
+    openSafetyMenu({
+      report: { type: 'conversation', id: info.id, label: 'Reportar conversación' },
+      block: info.other.id ? { userId: info.other.id, name: info.other.fullName } : undefined,
+      onBlock: (userId) => block.mutateAsync(userId),
+      afterBlock: () => router.back(),
+    })
+  }
 
   if (conversation.isError) {
     return (
@@ -44,7 +58,22 @@ export default function ChatScreen() {
   return (
     <>
       <Stack.Screen
-        options={conversation.data ? { headerTitle: () => <ChatHeader info={conversation.data} /> } : {}}
+        options={
+          info
+            ? {
+                headerTitle: () => <ChatHeader info={info} />,
+                headerRight: () => (
+                  <IconButton
+                    icon="ellipsis-horizontal"
+                    variant="plain"
+                    accessibilityLabel="Más opciones"
+                    onPress={more}
+                    testID="chat-more"
+                  />
+                ),
+              }
+            : {}
+        }
       />
       <ChatBody conversationId={id} />
     </>
