@@ -1,0 +1,43 @@
+# Dependencies
+node_modules/
+
+# Secrets: never commit. Copy the matching .env.example instead.
+.env
+.env.*
+!.env.example
+*.pem
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.jks
+*.keystore
+google-services.json
+GoogleService-Info.plist
+credentials.json
+
+# Builds
+dist/
+build/
+web-build/
+*.apk
+*.aab
+*.ipa
+coverage/
+
+# Expo / React Native
+.expo/
+expo-env.d.ts
+app/ios/
+app/android/
+
+# OS / editors
+.DS_Store
+Thumbs.db
+*.log
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# Confidential client material (brief, Figma exports): keep out of git
+reference/

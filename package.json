@@ -1,0 +1,20 @@
+{
+  "name": "planya",
+  "private": true,
+  "description": "PlanYá monorepo: /app (Expo), /admin (web panel), /supabase (database).",
+  "scripts": {
+    "db:test": "npm --prefix supabase/tests test",
+    "db:test-users": "node --env-file=.env supabase/scripts/create-test-users.mjs",
+    "db:race": "node --env-file=.env supabase/scripts/last-seat-race.mjs",
+    "app:check": "npm --prefix app run check",
+    "check": "npm run app:check && npm run db:test",
+    "figma:export": "node --env-file=.env scripts/figma-export.mjs",
+    "preview:fixtures": "node supabase/tests/export-preview-fixtures.mjs"
+  },
+  "devDependencies": {
+    "@supabase/supabase-js": "2.118.0"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

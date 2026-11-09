@@ -1,0 +1,13 @@
+{
+  "name": "planya-db-tests",
+  "private": true,
+  "type": "module",
+  "description": "Runs the real migrations + seed in PGlite (Postgres + PostGIS in WASM) and tests RLS and database functions. No Docker needed.",
+  "scripts": {
+    "test": "node --test --test-concurrency=1 --test-timeout=300000 db.test.mjs"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "0.5.15",
+    "@electric-sql/pglite-postgis": "0.2.15"
+  }
+}
