@@ -219,3 +219,22 @@ export function dayLabel(s: DateString): { weekday: string; day: number; month: 
   const { day, month } = parseDateString(s)
   return { weekday: WEEKDAYS_ES_SHORT[weekdayOf(s)] ?? '', day, month: MONTHS_ES_SHORT[month - 1] ?? '' }
 }
+
+/** Conversation list time: "14:05" today, "Ayer", "Lun" this week, "8 nov" before. */
+export function formatChatListTime(date: Date, now: Date = new Date()): string {
+  const day = toDateString(date)
+  const today = toDateString(now)
+  if (day === today) return formatTime(date)
+  if (day === addDays(today, -1)) return 'Ayer'
+  if (day > addDays(today, -7)) return WEEKDAYS_ES_SHORT[zonedParts(date).weekday] ?? formatShortDate(date)
+  return formatShortDate(date)
+}
+
+/** Chat day separator: "Hoy", "Ayer", "Sábado 8 de noviembre". */
+export function formatChatDay(date: Date, now: Date = new Date()): string {
+  const day = toDateString(date)
+  const today = toDateString(now)
+  if (day === today) return 'Hoy'
+  if (day === addDays(today, -1)) return 'Ayer'
+  return capitalize(formatLongDate(date, now))
+}

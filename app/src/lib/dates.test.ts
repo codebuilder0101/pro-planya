@@ -1,6 +1,8 @@
 import {
   addDays,
   capitalize,
+  formatChatDay,
+  formatChatListTime,
   formatDuration,
   formatLongDate,
   formatPlanDate,
@@ -133,5 +135,20 @@ describe('formatDuration / capitalize', () => {
   it('capitalizes the first letter only', () => {
     expect(capitalize('sábado 8 de noviembre')).toBe('Sábado 8 de noviembre')
     expect(capitalize('')).toBe('')
+  })
+})
+
+describe('chat times', () => {
+  const now = summer('2026-11-12T15:00:00') // Thursday
+  it('formats the conversation list time', () => {
+    expect(formatChatListTime(summer('2026-11-12T09:05:00'), now)).toBe('09:05')
+    expect(formatChatListTime(summer('2026-11-11T23:59:00'), now)).toBe('Ayer')
+    expect(formatChatListTime(summer('2026-11-08T10:00:00'), now)).toBe('Dom')
+    expect(formatChatListTime(summer('2026-11-05T10:00:00'), now)).toBe('5 nov')
+  })
+  it('formats day separators', () => {
+    expect(formatChatDay(summer('2026-11-12T01:00:00'), now)).toBe('Hoy')
+    expect(formatChatDay(summer('2026-11-11T01:00:00'), now)).toBe('Ayer')
+    expect(formatChatDay(summer('2026-11-08T10:00:00'), now)).toBe('Domingo 8 de noviembre')
   })
 })

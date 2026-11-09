@@ -3,6 +3,7 @@ import { useEffect } from 'react'
 
 import { useAuth } from '@/features/auth/auth-provider'
 import { useMyProfile } from '@/features/profile/api'
+import { useRealtimeSync } from '@/features/realtime/use-realtime-sync'
 import { colors, shape } from '@/theme/tokens'
 
 export default function AppLayout() {
@@ -24,6 +25,8 @@ export default function AppLayout() {
         <Stack.Screen name="experience/[id]/index" options={{ headerShown: false }} />
         <Stack.Screen name="plan/new" options={{ title: 'Publicar plan' }} />
         <Stack.Screen name="plan/[id]/edit" options={{ title: 'Editar plan' }} />
+        <Stack.Screen name="chats" options={{ title: 'Mensajes' }} />
+        <Stack.Screen name="chats/[id]" options={{ title: '' }} />
         {/* Bottom sheets (native form sheets): join and filters. */}
         <Stack.Screen
           name="experience/[id]/join"
@@ -57,6 +60,7 @@ export default function AppLayout() {
  * - Opens profile onboarding once, right after sign-up.
  */
 function SessionGuards() {
+  useRealtimeSync()
   const { signOut, setNotice, justSignedUp, consumeJustSignedUp } = useAuth()
   const profile = useMyProfile()
   const isSuspended = profile.data?.is_suspended === true

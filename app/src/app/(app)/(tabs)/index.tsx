@@ -18,6 +18,7 @@ import { SectionHeader } from '@/components/ui/section-header'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Text } from '@/components/ui/text'
 import { useCategories, useCategoryMap } from '@/features/categories/api'
+import { MessagesButton } from '@/features/chat/messages-button'
 import { CategoryTile } from '@/features/categories/category-tile'
 import { useExperienceList, useNearbyExperiences } from '@/features/experiences/api'
 import { ExperienceCarousel } from '@/features/experiences/components/experience-carousel'
@@ -132,13 +133,16 @@ export default function HomeScreen() {
         {/* Brand + avatar */}
         <View style={styles.topBar}>
           <BrandLogo />
-          <PressableScale
-            onPress={() => router.navigate('/profile')}
-            accessibilityRole="button"
-            accessibilityLabel="Ir a mi perfil"
-          >
-            <Avatar uri={profile.data?.avatar_url} name={profile.data?.full_name} size={44} />
-          </PressableScale>
+          <View style={styles.topActions}>
+            <MessagesButton />
+            <PressableScale
+              onPress={() => router.navigate('/profile')}
+              accessibilityRole="button"
+              accessibilityLabel="Ir a mi perfil"
+            >
+              <Avatar uri={profile.data?.avatar_url} name={profile.data?.full_name} size={44} />
+            </PressableScale>
+          </View>
         </View>
 
         {/* Location + weather, greeting */}
@@ -411,6 +415,7 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
+  topActions: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   root: { flex: 1, backgroundColor: colors.background },
   flex: { flex: 1 },
   flexShrink: { flexShrink: 1 },

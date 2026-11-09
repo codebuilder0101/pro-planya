@@ -47,4 +47,7 @@ export const queryKeys = {
   places: (args: unknown) => ['places', args] as const,
   /** Host "Mis planes" (under 'experiences' so any plan change refreshes it). */
   myExperiences: (userId: string) => ['experiences', 'mine', userId] as const,
+  conversations: (userId: string) => ['conversations', 'list', userId] as const,
+  conversation: (id: string) => ['conversations', 'detail', id] as const,
+  messages: (conversationId: string) => ['messages', conversationId] as const,
 }

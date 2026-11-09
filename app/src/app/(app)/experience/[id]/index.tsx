@@ -33,6 +33,7 @@ import {
   type ExperienceDetail,
 } from '@/features/experiences/api'
 import { statusBadge } from '@/features/experiences/components/experience-card'
+import { useStartConversation } from '@/features/chat/api'
 import { useFavorites } from '@/features/experiences/use-favorites'
 import { useMyProfile, useUserId } from '@/features/profile/api'
 import { capitalize, formatDuration, formatLongDate, formatTimeRange } from '@/lib/dates'
@@ -366,23 +367,49 @@ function ExpandableText({ text }: { text: string }) {
 }
 
 function HostCard({ experience: e }: { experience: ExperienceDetail }) {
+  const userId = useUserId()
+  const start = useStartConversation()
+  const canWrite = e.host_id !== userId && e.status !== 'removed'
+
+  const writeToHost = async () => {
+    try {
+      const conversationId = await start.mutateAsync(e.id)
+      router.push({ pathname: '/chats/[id]', params: { id: conversationId } })
+    } catch (error) {
+      Alert.alert('No pudimos abrir el chat', toUserMessage(error))
+    }
+  }
+
   return (
     <View style={styles.hostCard}>
-      <Avatar uri={e.host_avatar_url} name={e.host_full_name} size={52} />
-      <View style={styles.flex}>
-        <Text variant="caption" color="textSecondary">
-          Organiza
-        </Text>
-        <Text variant="bodyStrong" numberOfLines={1}>
-          {e.host_full_name}
-        </Text>
-        {e.host_bio ? (
-          <Text variant="caption" color="textSecondary" numberOfLines={2}>
-            {e.host_bio}
+      <View style={styles.hostRow}>
+        <Avatar uri={e.host_avatar_url} name={e.host_full_name} size={52} />
+        <View style={styles.flex}>
+          <Text variant="caption" color="textSecondary">
+            Organiza
           </Text>
-        ) : null}
+          <Text variant="bodyStrong" numberOfLines={1}>
+            {e.host_full_name}
+          </Text>
+          {e.host_bio ? (
+            <Text variant="caption" color="textSecondary" numberOfLines={2}>
+              {e.host_bio}
+            </Text>
+          ) : null}
+        </View>
+        <Badge label="Anfitrión" tone="brand" icon="shield-checkmark-outline" />
       </View>
-      <Badge label="Anfitrión" tone="brand" icon="shield-checkmark-outline" />
+      {canWrite ? (
+        <Button
+          label="Escribir al anfitrión"
+          icon="chatbubble-ellipses-outline"
+          variant="secondary"
+          size="md"
+          onPress={() => void writeToHost()}
+          loading={start.isPending}
+          testID="detail-write-host"
+        />
+      ) : null}
     </View>
   )
 }
@@ -647,8 +674,6 @@ const styles = StyleSheet.create({
   progressFill: { height: 6, borderRadius: radius.pill, backgroundColor: colors.brandAccent },
   progressHot: { backgroundColor: colors.accent },
   hostCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
     gap: spacing.md,
     padding: spacing.lg,
     borderRadius: shape.card,
@@ -656,6 +681,7 @@ const styles = StyleSheet.create({
     ...elevation[2],
     marginVertical: spacing.sm,
   },
+  hostRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   section: { gap: spacing.sm, marginTop: spacing.md },
   participants: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   avatarStack: { flexDirection: 'row' },

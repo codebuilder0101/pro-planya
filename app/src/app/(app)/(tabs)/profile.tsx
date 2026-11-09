@@ -111,6 +111,13 @@ export default function ProfileScreen() {
 
       <View style={styles.actions}>
         <Button
+          label="Mensajes"
+          variant="secondary"
+          icon="chatbubbles-outline"
+          onPress={() => router.push('/chats')}
+          testID="profile-messages"
+        />
+        <Button
           label="Editar perfil"
           variant="secondary"
           icon="create-outline"
