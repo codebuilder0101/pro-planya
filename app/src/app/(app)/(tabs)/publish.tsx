@@ -13,6 +13,7 @@ import { useCategoryMap } from '@/features/categories/api'
 import { useMyExperiences, useSetPlanStatus, type MyExperience } from '@/features/host/api'
 import { MyPlanCard } from '@/features/host/components/my-plan-card'
 import { useMyProfile } from '@/features/profile/api'
+import { useBecomeHostFlow } from '@/features/profile/become-host'
 import { confirmAction } from '@/lib/dialogs'
 import { toUserMessage } from '@/lib/errors'
 import { colors, radius, shape, spacing } from '@/theme/tokens'
@@ -24,6 +25,7 @@ const newPlan = () => router.push('/plan/new')
 export default function PublishScreen() {
   const profile = useMyProfile()
   const canHost = profile.data?.role === 'host' || profile.data?.role === 'admin'
+  const becomeHost = useBecomeHostFlow()
 
   return (
     <TabScreen>
@@ -44,8 +46,10 @@ export default function PublishScreen() {
       ) : (
         <EmptyState
           icon="megaphone-outline"
-          title="Publicar es para anfitriones"
-          description="Tu cuenta es de explorador. Para publicar planes necesitas una cuenta de anfitrión."
+          title="¿Quieres publicar tus planes?"
+          description="Tu cuenta es de explorador. Hazte anfitrión para publicar planes y recibir personas. Podrás seguir uniéndote a planes de otros."
+          actionLabel={becomeHost.pending ? 'Un momento…' : 'Quiero ser anfitrión'}
+          onAction={() => void becomeHost.start()}
         />
       )}
     </TabScreen>

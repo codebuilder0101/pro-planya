@@ -1,4 +1,4 @@
-import { profileSchema, resetPasswordSchema, signInSchema, signUpSchema } from './validation'
+import { accountRole, profileSchema, resetPasswordSchema, signInSchema, signUpSchema } from './validation'
 
 const firstError = (result: { success: boolean; error?: { issues: { message: string }[] } }) =>
   result.success ? null : (result.error?.issues[0]?.message ?? null)
@@ -19,16 +19,25 @@ describe('signInSchema', () => {
   })
 })
 
+describe('accountRole', () => {
+  it('is host when host is ticked, alone or with explorer', () => {
+    expect(accountRole(['host'])).toBe('host')
+    expect(accountRole(['explorer', 'host'])).toBe('host')
+    expect(accountRole(['explorer'])).toBe('explorer')
+  })
+})
+
 describe('signUpSchema', () => {
-  const valid = { fullName: 'Ana Pérez', email: 'ana@correo.cl', password: 'clave1234', role: 'explorer' }
+  const valid = { fullName: 'Ana Pérez', email: 'ana@correo.cl', password: 'clave1234', roles: ['explorer'] }
   it('accepts a valid sign-up', () => {
     expect(signUpSchema.safeParse(valid).success).toBe(true)
   })
-  it('requires a role', () => {
-    expect(firstError(signUpSchema.safeParse({ ...valid, role: undefined }))).toBe(
-      'Elige cómo quieres usar PlanYá.',
-    )
-    expect(signUpSchema.safeParse({ ...valid, role: 'admin' }).success).toBe(false)
+  it('requires at least one role', () => {
+    expect(firstError(signUpSchema.safeParse({ ...valid, roles: [] }))).toBe('Elige al menos una opción.')
+    expect(signUpSchema.safeParse({ ...valid, roles: ['admin'] }).success).toBe(false)
+  })
+  it('accepts both roles', () => {
+    expect(signUpSchema.safeParse({ ...valid, roles: ['explorer', 'host'] }).success).toBe(true)
   })
   it('enforces password rules', () => {
     expect(firstError(signUpSchema.safeParse({ ...valid, password: 'abc1' }))).toBe(

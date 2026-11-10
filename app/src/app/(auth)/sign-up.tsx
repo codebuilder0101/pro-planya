@@ -12,7 +12,13 @@ import { Text } from '@/components/ui/text'
 import { TextField } from '@/components/ui/text-field'
 import { useAuth } from '@/features/auth/auth-provider'
 import { toUserMessage } from '@/lib/errors'
-import { signUpSchema, type SignUpOutput, type SignUpValues } from '@/lib/validation'
+import {
+  accountRole,
+  signUpSchema,
+  type AccountRole,
+  type SignUpOutput,
+  type SignUpValues,
+} from '@/lib/validation'
 import { spacing } from '@/theme/tokens'
 
 export default function SignUpScreen() {
@@ -23,13 +29,13 @@ export default function SignUpScreen() {
 
   const { control, handleSubmit, formState } = useForm<SignUpValues, unknown, SignUpOutput>({
     resolver: zodResolver(signUpSchema),
-    defaultValues: { fullName: '', email: '', password: '', role: undefined },
+    defaultValues: { fullName: '', email: '', password: '', roles: [] },
   })
 
   const onSubmit = handleSubmit(async (values) => {
     setFormError(null)
     try {
-      const { needsEmailConfirmation } = await signUp(values)
+      const { needsEmailConfirmation } = await signUp({ ...values, role: accountRole(values.roles) })
       if (needsEmailConfirmation) {
         router.replace({ pathname: '/check-email', params: { email: values.email } })
       }
@@ -51,28 +57,31 @@ export default function SignUpScreen() {
       <View style={styles.form}>
         <Controller
           control={control}
-          name="role"
+          name="roles"
           render={({ field, fieldState }) => (
-            <View
-              style={styles.roles}
-              accessibilityRole="radiogroup"
-              accessibilityLabel="¿Cómo quieres usar PlanYá?"
-            >
-              <Text variant="headline">¿Cómo quieres usar PlanYá?</Text>
+            <View style={styles.roles} accessibilityLabel="¿Cómo quieres usar PlanYá?">
+              <View style={styles.rolesHeader}>
+                <Text variant="headline">¿Cómo quieres usar PlanYá?</Text>
+                <Text variant="footnote" color="textSecondary">
+                  Puedes elegir una o las dos. Como anfitrión también puedes unirte a planes de otros.
+                </Text>
+              </View>
               <ChoiceCard
+                multiple
                 title="Explorador"
                 description="Quiero encontrar planes y unirme a ellos."
                 icon="compass-outline"
-                selected={field.value === 'explorer'}
-                onPress={() => field.onChange('explorer')}
+                selected={field.value.includes('explorer')}
+                onPress={() => field.onChange(toggle(field.value, 'explorer'))}
                 testID="sign-up-role-explorer"
               />
               <ChoiceCard
+                multiple
                 title="Anfitrión"
-                description="Quiero publicar planes y recibir personas."
+                description="Quiero publicar mis propios planes y recibir personas."
                 icon="megaphone-outline"
-                selected={field.value === 'host'}
-                onPress={() => field.onChange('host')}
+                selected={field.value.includes('host')}
+                onPress={() => field.onChange(toggle(field.value, 'host'))}
                 testID="sign-up-role-host"
               />
               {fieldState.error?.message ? (
@@ -166,4 +175,9 @@ const styles = StyleSheet.create({
   header: { gap: spacing.sm, marginBottom: spacing.xl },
   form: { gap: spacing.lg },
   roles: { gap: spacing.md },
+  rolesHeader: { gap: spacing.xxs },
 })
+
+function toggle(roles: AccountRole[], role: AccountRole): AccountRole[] {
+  return roles.includes(role) ? roles.filter((r) => r !== role) : [...roles, role]
+}

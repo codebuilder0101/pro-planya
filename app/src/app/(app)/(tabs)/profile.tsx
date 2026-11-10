@@ -1,6 +1,6 @@
 import { router } from 'expo-router'
 import { useState } from 'react'
-import { StyleSheet, View } from 'react-native'
+import { ActivityIndicator, StyleSheet, View } from 'react-native'
 
 import { TabScreen } from '@/components/navigation/tab-screen'
 import { Avatar } from '@/components/ui/avatar'
@@ -14,16 +14,19 @@ import { Text } from '@/components/ui/text'
 import { useAuth } from '@/features/auth/auth-provider'
 import { useCategories } from '@/features/categories/api'
 import { useUnreadCount } from '@/features/chat/api'
-import { useMyProfile } from '@/features/profile/api'
+import { ROLE_LABEL, useMyProfile } from '@/features/profile/api'
+import { useBecomeHostFlow } from '@/features/profile/become-host'
+import { useChangeAvatar } from '@/features/profile/use-change-avatar'
+import { FormMessage } from '@/components/ui/form-message'
 import { colors, elevation, radius, spacing } from '@/theme/tokens'
-
-const ROLE_LABEL = { explorer: 'Explorador', host: 'Anfitrión', admin: 'Administrador' } as const
 
 export default function ProfileScreen() {
   const { signOut } = useAuth()
   const profile = useMyProfile()
   const categories = useCategories()
   const unread = useUnreadCount()
+  const photo = useChangeAvatar()
+  const becomeHost = useBecomeHostFlow()
   const [signingOut, setSigningOut] = useState(false)
 
   const onSignOut = async () => {
@@ -67,7 +70,24 @@ export default function ProfileScreen() {
   return (
     <TabScreen>
       <View style={styles.header}>
-        <Avatar uri={p.avatar_url} name={p.full_name} size={96} />
+        <PressableScale
+          onPress={photo.open}
+          disabled={photo.uploading}
+          accessibilityRole="button"
+          accessibilityLabel={p.avatar_url ? 'Cambiar foto de perfil' : 'Agregar foto de perfil'}
+          testID="profile-avatar"
+        >
+          <Avatar uri={p.avatar_url} name={p.full_name} size={96} />
+          {photo.uploading ? (
+            <View style={styles.avatarBusy}>
+              <ActivityIndicator color={colors.onPrimary} />
+            </View>
+          ) : null}
+          <View style={styles.cameraBadge}>
+            <Icon name="camera" size={16} color="onPrimary" />
+          </View>
+        </PressableScale>
+        <FormMessage tone="error" message={photo.error} />
         <Text variant="title1" align="center" accessibilityRole="header">
           {p.full_name || 'Sin nombre'}
         </Text>
@@ -84,6 +104,30 @@ export default function ProfileScreen() {
           ) : null}
         </View>
       </View>
+
+      {!p.avatar_url ? (
+        <View style={styles.photoCard}>
+          <View style={styles.photoCardRow}>
+            <View style={styles.photoCardIcon}>
+              <Icon name="person-circle-outline" size={28} color="textBrand" />
+            </View>
+            <View style={styles.photoCardText}>
+              <Text variant="bodyStrong">Agrega una foto de perfil</Text>
+              <Text variant="footnote" color="textSecondary">
+                Así las personas saben con quién van a compartir el plan y se sienten más seguras.
+              </Text>
+            </View>
+          </View>
+          <Button
+            label="Agregar foto"
+            icon="camera-outline"
+            size="md"
+            onPress={photo.open}
+            loading={photo.uploading}
+            testID="profile-add-photo"
+          />
+        </View>
+      ) : null}
 
       <View style={styles.section}>
         <Text variant="headline">Sobre mí</Text>
@@ -134,6 +178,18 @@ export default function ProfileScreen() {
           onPress={() => router.push('/blocked')}
           testID="profile-blocked"
         />
+        {p.role === 'explorer' ? (
+          <>
+            <View style={styles.menuDivider} />
+            <MenuRow
+              icon="megaphone-outline"
+              label="Quiero ser anfitrión"
+              onPress={() => void becomeHost.start()}
+              disabled={becomeHost.pending}
+              testID="profile-become-host"
+            />
+          </>
+        ) : null}
       </View>
 
       <View style={styles.actions}>
@@ -161,17 +217,20 @@ function MenuRow({
   label,
   badge = 0,
   onPress,
+  disabled = false,
   testID,
 }: {
   icon: IconName
   label: string
   badge?: number
   onPress: () => void
+  disabled?: boolean
   testID?: string
 }) {
   return (
     <PressableScale
       onPress={onPress}
+      disabled={disabled}
       accessibilityRole="button"
       accessibilityLabel={badge > 0 ? `${label}, ${badge} sin leer` : label}
       style={styles.menuRow}
@@ -195,6 +254,47 @@ function MenuRow({
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
+  avatarBusy: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    borderRadius: 48,
+    backgroundColor: colors.overlay,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cameraBadge: {
+    position: 'absolute',
+    right: 0,
+    bottom: 0,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: colors.primary,
+    borderWidth: 2,
+    borderColor: colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  photoCard: {
+    gap: spacing.md,
+    padding: spacing.lg,
+    marginBottom: spacing.xl,
+    borderRadius: radius.lg,
+    backgroundColor: colors.primaryTint,
+  },
+  photoCardRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  photoCardText: { flex: 1, gap: 2 },
+  photoCardIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   menu: {
     borderRadius: radius.lg,
     backgroundColor: colors.surface,

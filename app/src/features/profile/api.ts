@@ -95,3 +95,23 @@ export function useUploadAvatar() {
     onSuccess: (profile) => queryClient.setQueryData(queryKeys.profile(profile.id), profile),
   })
 }
+
+/** "Quiero ser anfitrión": explorer -> host (the database only allows this one change). */
+export function useBecomeHost() {
+  const userId = useUserId()
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.rpc('become_host')
+      if (error) throw error
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: queryKeys.profile(userId) }),
+  })
+}
+
+/** How the role reads on the profile (a host account can also explore). */
+export const ROLE_LABEL = {
+  explorer: 'Explorador',
+  host: 'Explorador y anfitrión',
+  admin: 'Administrador',
+} as const

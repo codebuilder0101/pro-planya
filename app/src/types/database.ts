@@ -634,6 +634,10 @@ export type Database = {
         Args: { p_booking_id: string }
         Returns: BookingRow
       }
+      become_host: {
+        Args: Record<PropertyKey, never>
+        Returns: Database['public']['Enums']['user_role']
+      }
       search_experiences: {
         Args: {
           p_query?: string | null

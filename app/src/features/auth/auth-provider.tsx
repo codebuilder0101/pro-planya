@@ -3,7 +3,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { createContext, use, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 
 import { supabase } from '@/lib/supabase'
-import type { SignUpValues } from '@/lib/validation'
+import type { AccountRole } from '@/lib/validation'
 
 type SignUpResult = { needsEmailConfirmation: boolean }
 
@@ -25,7 +25,7 @@ type AuthContextValue = {
     fullName: string
     email: string
     password: string
-    role: SignUpValues['role']
+    role: AccountRole
   }) => Promise<SignUpResult>
   signOut: () => Promise<void>
   requestPasswordReset: (email: string) => Promise<void>

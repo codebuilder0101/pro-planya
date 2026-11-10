@@ -2,7 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { router, Stack, useLocalSearchParams } from 'expo-router'
 import { useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
-import { ActivityIndicator, Alert, StyleSheet, View } from 'react-native'
+import { ActivityIndicator, StyleSheet, View } from 'react-native'
 
 import { Avatar } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
@@ -16,9 +16,9 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Text } from '@/components/ui/text'
 import { TextField } from '@/components/ui/text-field'
 import { useCategories } from '@/features/categories/api'
-import { useMyProfile, useUpdateProfile, useUploadAvatar, type Profile } from '@/features/profile/api'
+import { useMyProfile, useUpdateProfile, type Profile } from '@/features/profile/api'
+import { useChangeAvatar } from '@/features/profile/use-change-avatar'
 import { toUserMessage } from '@/lib/errors'
-import { PermissionDeniedError, permissionDeniedMessage, pickImage, type ImageSource } from '@/lib/images'
 import { profileSchema, type ProfileOutput, type ProfileValues } from '@/lib/validation'
 import { colors, spacing } from '@/theme/tokens'
 
@@ -68,9 +68,8 @@ function leave() {
 function EditProfileForm({ profile, isOnboarding }: { profile: Profile; isOnboarding: boolean }) {
   const categories = useCategories()
   const updateProfile = useUpdateProfile()
-  const uploadAvatar = useUploadAvatar()
+  const photo = useChangeAvatar()
   const [formError, setFormError] = useState<string | null>(null)
-  const [photoError, setPhotoError] = useState<string | null>(null)
 
   const { control, handleSubmit, formState } = useForm<ProfileValues, unknown, ProfileOutput>({
     resolver: zodResolver(profileSchema),
@@ -97,30 +96,6 @@ function EditProfileForm({ profile, isOnboarding }: { profile: Profile; isOnboar
     }
   })
 
-  const changePhoto = async (source: ImageSource) => {
-    setPhotoError(null)
-    try {
-      const picked = await pickImage(source, { allowsEditing: true, aspect: [1, 1] })
-      if (!picked) return
-      await uploadAvatar.mutateAsync(picked)
-    } catch (error) {
-      setPhotoError(
-        error instanceof PermissionDeniedError
-          ? permissionDeniedMessage(error.source)
-          : toUserMessage(error, 'No pudimos subir la foto. Inténtalo de nuevo.'),
-      )
-    }
-  }
-
-  // TODO(stage-1 UI kit): replace with the shared bottom sheet once it exists.
-  const onPhotoPress = () => {
-    Alert.alert('Foto de perfil', undefined, [
-      { text: 'Tomar foto', onPress: () => void changePhoto('camera') },
-      { text: 'Elegir de la galería', onPress: () => void changePhoto('library') },
-      { text: 'Cancelar', style: 'cancel' },
-    ])
-  }
-
   return (
     <Screen
       scroll
@@ -131,7 +106,7 @@ function EditProfileForm({ profile, isOnboarding }: { profile: Profile; isOnboar
             label={isOnboarding ? 'Guardar y continuar' : 'Guardar cambios'}
             onPress={onSubmit}
             loading={formState.isSubmitting}
-            disabled={uploadAvatar.isPending}
+            disabled={photo.uploading}
             testID="profile-save"
           />
           {isOnboarding ? (
@@ -142,14 +117,14 @@ function EditProfileForm({ profile, isOnboarding }: { profile: Profile; isOnboar
     >
       <View style={styles.photo}>
         <PressableScale
-          onPress={onPhotoPress}
-          disabled={uploadAvatar.isPending}
+          onPress={photo.open}
+          disabled={photo.uploading}
           accessibilityRole="button"
           accessibilityLabel="Cambiar foto de perfil"
           testID="profile-photo"
         >
           <Avatar uri={profile.avatar_url} name={profile.full_name} size={104} />
-          {uploadAvatar.isPending ? (
+          {photo.uploading ? (
             <View style={styles.photoBusy}>
               <ActivityIndicator color={colors.onPrimary} />
             </View>
@@ -160,10 +135,10 @@ function EditProfileForm({ profile, isOnboarding }: { profile: Profile; isOnboar
           variant="ghost"
           size="md"
           fullWidth={false}
-          onPress={onPhotoPress}
-          disabled={uploadAvatar.isPending}
+          onPress={photo.open}
+          disabled={photo.uploading}
         />
-        <FormMessage tone="error" message={photoError} />
+        <FormMessage tone="error" message={photo.error} />
       </View>
 
       <View style={styles.form}>

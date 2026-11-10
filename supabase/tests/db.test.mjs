@@ -156,6 +156,36 @@ describe('profiles', () => {
       assert.deepEqual(rows, [{ is_suspended: true }])
     })
   })
+
+  test('become_host turns an explorer into a host; never demotes or promotes further', async () => {
+    await tx(db, async (t) => {
+      await t.as(IDS.explorerA)
+      assert.deepEqual(await t.one(`select public.become_host() as role`), { role: 'host' })
+      await t.as(null)
+      const p = await t.one(`select role from public.profiles where id = $1`, [IDS.explorerA])
+      assert.equal(p.role, 'host')
+      // Calling it again, as a host or as an admin, changes nothing.
+      await t.as(IDS.explorerA)
+      assert.deepEqual(await t.one(`select public.become_host() as role`), { role: 'host' })
+      await t.as(IDS.admin)
+      assert.deepEqual(await t.one(`select public.become_host() as role`), { role: 'admin' })
+      // The new host can publish (plans insert policy uses private.is_host()).
+      await t.as(IDS.explorerA)
+      const ok = await t.one(`select private.is_host() as ok`)
+      assert.equal(ok.ok, true)
+    })
+  })
+
+  test('become_host is refused to suspended users and anonymous callers', async () => {
+    await tx(db, async (t) => {
+      await t.as(null)
+      await t.q(`update public.profiles set is_suspended = true where id = $1`, [IDS.explorerB])
+      await t.as(IDS.explorerB)
+      await t.fails(`select public.become_host()`, [], biz('forbidden'))
+      await t.asAnon()
+      await t.fails(`select public.become_host()`, [], { code: '42501' })
+    })
+  })
 })
 
 // ---------------------------------------------------------------------------

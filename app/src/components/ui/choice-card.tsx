@@ -12,17 +12,26 @@ type Props = {
   icon: IconName
   selected: boolean
   onPress: () => void
+  /** Checkbox behaviour (several cards can be selected). */
+  multiple?: boolean
   testID?: string
 }
 
 /** Large selectable card, used for "Explorador / Anfitrión" at sign-up. */
-export function ChoiceCard({ title, description, icon, selected, onPress, testID }: Props) {
+export function ChoiceCard({ title, description, icon, selected, onPress, multiple = false, testID }: Props) {
+  const mark = multiple
+    ? selected
+      ? 'checkbox'
+      : 'square-outline'
+    : selected
+      ? 'checkmark-circle'
+      : 'ellipse-outline'
   return (
     <PressableScale
       testID={testID}
       onPress={onPress}
       haptic
-      accessibilityRole="radio"
+      accessibilityRole={multiple ? 'checkbox' : 'radio'}
       accessibilityLabel={`${title}. ${description}`}
       accessibilityState={{ checked: selected }}
       style={[styles.card, selected ? styles.selected : styles.unselected]}
@@ -36,11 +45,7 @@ export function ChoiceCard({ title, description, icon, selected, onPress, testID
           {description}
         </Text>
       </View>
-      <Icon
-        name={selected ? 'checkmark-circle' : 'ellipse-outline'}
-        size={24}
-        color={selected ? 'primary' : 'borderStrong'}
-      />
+      <Icon name={mark} size={24} color={selected ? 'primary' : 'borderStrong'} />
     </PressableScale>
   )
 }

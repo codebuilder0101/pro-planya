@@ -23,7 +23,15 @@ export const fullNameSchema = z
   .min(2, 'Ingresa tu nombre.')
   .max(80, 'El nombre puede tener hasta 80 caracteres.')
 
-export const roleSchema = z.enum(['explorer', 'host'], 'Elige cómo quieres usar PlanYá.')
+export type AccountRole = 'explorer' | 'host'
+
+/** Sign-up lets you tick explorer, host or both (a host account can also explore). */
+export const rolesSchema = z.array(z.enum(['explorer', 'host'])).min(1, 'Elige al menos una opción.')
+
+/** The account role saved in the database: host when host is ticked (it includes exploring). */
+export function accountRole(roles: readonly AccountRole[]): AccountRole {
+  return roles.includes('host') ? 'host' : 'explorer'
+}
 
 export const signInSchema = z.object({
   email: emailSchema,
@@ -36,7 +44,7 @@ export const signUpSchema = z.object({
   fullName: fullNameSchema,
   email: emailSchema,
   password: newPasswordSchema,
-  role: roleSchema,
+  roles: rolesSchema,
 })
 export type SignUpValues = z.input<typeof signUpSchema>
 export type SignUpOutput = z.output<typeof signUpSchema>
