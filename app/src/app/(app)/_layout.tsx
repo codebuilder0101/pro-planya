@@ -22,6 +22,7 @@ export default function AppLayout() {
       >
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="profile/edit" options={{ title: 'Editar perfil' }} />
+        <Stack.Screen name="user/[id]" options={{ headerShown: false }} />
         <Stack.Screen name="experience/[id]/index" options={{ headerShown: false }} />
         <Stack.Screen name="plan/new" options={{ title: 'Publicar plan' }} />
         <Stack.Screen name="plan/[id]/edit" options={{ title: 'Editar plan' }} />

@@ -130,6 +130,40 @@ describe('profiles', () => {
     })
   })
 
+  test('owner sets and removes own cover photo; others read it but cannot change it', async () => {
+    await tx(db, async (t) => {
+      const url = 'https://example.supabase.co/storage/v1/object/public/avatars/a/cover.jpg'
+      await t.as(IDS.explorerA)
+      const own = await t.q(`update public.profiles set cover_url = $2 where id = $1 returning cover_url`, [
+        IDS.explorerA,
+        url,
+      ])
+      assert.equal(own[0]?.cover_url, url)
+      await t.fails(
+        `update public.profiles set cover_url = repeat('x', 1001) where id = $1`,
+        [IDS.explorerA],
+        {
+          code: '23514',
+        },
+      )
+
+      await t.as(IDS.explorerB)
+      const seen = await t.one(`select cover_url from public.profiles where id = $1`, [IDS.explorerA])
+      assert.equal(seen.cover_url, url)
+      const other = await t.q(`update public.profiles set cover_url = null where id = $1 returning id`, [
+        IDS.explorerA,
+      ])
+      assert.equal(other.length, 0)
+
+      await t.as(IDS.explorerA)
+      const removed = await t.q(
+        `update public.profiles set cover_url = null where id = $1 returning cover_url`,
+        [IDS.explorerA],
+      )
+      assert.equal(removed[0]?.cover_url, null)
+    })
+  })
+
   test('users cannot change their own role or suspension; admin can', async () => {
     await tx(db, async (t) => {
       await t.as(IDS.explorerA)

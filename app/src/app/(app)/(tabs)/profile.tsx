@@ -1,9 +1,9 @@
 import { router } from 'expo-router'
 import { useState } from 'react'
-import { ActivityIndicator, StyleSheet, View } from 'react-native'
+import { StyleSheet, View } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { TabScreen } from '@/components/navigation/tab-screen'
-import { Avatar } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Chip } from '@/components/ui/chip'
 import { EmptyState } from '@/components/ui/empty-state'
@@ -14,19 +14,23 @@ import { Text } from '@/components/ui/text'
 import { useAuth } from '@/features/auth/auth-provider'
 import { useCategories } from '@/features/categories/api'
 import { useUnreadCount } from '@/features/chat/api'
-import { ROLE_LABEL, useMyProfile } from '@/features/profile/api'
+import { useMyProfile } from '@/features/profile/api'
 import { useBecomeHostFlow } from '@/features/profile/become-host'
-import { useChangeAvatar } from '@/features/profile/use-change-avatar'
+import { COVER_HEIGHT, ProfileHeader, useLightStatusBar } from '@/features/profile/profile-header'
+import { useChangeAvatar, useChangeCover } from '@/features/profile/use-change-avatar'
 import { FormMessage } from '@/components/ui/form-message'
-import { colors, elevation, radius, spacing } from '@/theme/tokens'
+import { colors, elevation, radius, screenMargin, spacing } from '@/theme/tokens'
 
 export default function ProfileScreen() {
   const { signOut } = useAuth()
   const profile = useMyProfile()
   const categories = useCategories()
   const unread = useUnreadCount()
+  const insets = useSafeAreaInsets()
   const photo = useChangeAvatar()
+  const cover = useChangeCover(profile.data?.cover_url != null)
   const becomeHost = useBecomeHostFlow()
+  useLightStatusBar()
   const [signingOut, setSigningOut] = useState(false)
 
   const onSignOut = async () => {
@@ -41,6 +45,9 @@ export default function ProfileScreen() {
   if (profile.isPending) {
     return (
       <TabScreen>
+        <View style={[styles.bleed, { marginTop: -(insets.top + spacing.lg) }]}>
+          <Skeleton height={insets.top + COVER_HEIGHT} radius={0} />
+        </View>
         <View style={styles.header}>
           <Skeleton width={96} height={96} radius={48} />
           <Skeleton width={180} height={28} />
@@ -69,40 +76,11 @@ export default function ProfileScreen() {
 
   return (
     <TabScreen>
-      <View style={styles.header}>
-        <PressableScale
-          onPress={photo.open}
-          disabled={photo.uploading}
-          accessibilityRole="button"
-          accessibilityLabel={p.avatar_url ? 'Cambiar foto de perfil' : 'Agregar foto de perfil'}
-          testID="profile-avatar"
-        >
-          <Avatar uri={p.avatar_url} name={p.full_name} size={96} />
-          {photo.uploading ? (
-            <View style={styles.avatarBusy}>
-              <ActivityIndicator color={colors.onPrimary} />
-            </View>
-          ) : null}
-          <View style={styles.cameraBadge}>
-            <Icon name="camera" size={16} color="onPrimary" />
-          </View>
-        </PressableScale>
-        <FormMessage tone="error" message={photo.error} />
-        <Text variant="title1" align="center" accessibilityRole="header">
-          {p.full_name || 'Sin nombre'}
-        </Text>
-        <View style={styles.badges}>
-          <View style={styles.badge}>
-            <Text variant="caption" color="textBrand">
-              {ROLE_LABEL[p.role]}
-            </Text>
-          </View>
-          {p.city ? (
-            <Text variant="callout" color="textSecondary">
-              {p.city}
-            </Text>
-          ) : null}
-        </View>
+      <View style={[styles.bleed, { marginTop: -(insets.top + spacing.lg) }]}>
+        <ProfileHeader profile={p} topInset={insets.top} avatar={photo} cover={cover} />
+      </View>
+      <View style={styles.headerGap}>
+        <FormMessage tone="error" message={photo.error ?? cover.error} />
       </View>
 
       {!p.avatar_url ? (
@@ -157,6 +135,13 @@ export default function ProfileScreen() {
       </View>
 
       <View style={styles.menu}>
+        <MenuRow
+          icon="eye-outline"
+          label="Ver mi perfil público"
+          onPress={() => router.push({ pathname: '/user/[id]', params: { id: p.id } })}
+          testID="profile-public"
+        />
+        <View style={styles.menuDivider} />
         <MenuRow
           icon="chatbubbles-outline"
           label="Mensajes"
@@ -254,30 +239,9 @@ function MenuRow({
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  avatarBusy: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    bottom: 0,
-    left: 0,
-    borderRadius: 48,
-    backgroundColor: colors.overlay,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  cameraBadge: {
-    position: 'absolute',
-    right: 0,
-    bottom: 0,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: colors.primary,
-    borderWidth: 2,
-    borderColor: colors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  bleed: { marginHorizontal: -screenMargin },
+  headerGap: { paddingTop: spacing.md, marginBottom: spacing.lg, gap: spacing.sm },
+
   photoCard: {
     gap: spacing.md,
     padding: spacing.lg,
@@ -323,13 +287,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   header: { alignItems: 'center', gap: spacing.sm, marginBottom: spacing.xl },
-  badges: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  badge: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: radius.pill,
-    backgroundColor: colors.primarySoft,
-  },
+
   section: { gap: spacing.sm, marginBottom: spacing.xl },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   actions: { gap: spacing.sm, marginTop: spacing.md },

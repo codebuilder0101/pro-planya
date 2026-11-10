@@ -412,7 +412,13 @@ function HostCard({ experience: e }: { experience: ExperienceDetail }) {
 
   return (
     <View style={styles.hostCard}>
-      <View style={styles.hostRow}>
+      <PressableScale
+        style={styles.hostRow}
+        onPress={() => router.push({ pathname: '/user/[id]', params: { id: e.host_id } })}
+        accessibilityRole="button"
+        accessibilityLabel={`Ver el perfil de ${e.host_full_name || 'el anfitrión'}`}
+        testID="detail-host-profile"
+      >
         <Avatar uri={e.host_avatar_url} name={e.host_full_name} size={52} />
         <View style={styles.flex}>
           <Text variant="caption" color="textSecondary">
@@ -428,7 +434,8 @@ function HostCard({ experience: e }: { experience: ExperienceDetail }) {
           ) : null}
         </View>
         <Badge label="Anfitrión" tone="brand" icon="shield-checkmark-outline" />
-      </View>
+        <Icon name="chevron-forward" size={18} color="textTertiary" />
+      </PressableScale>
       {canWrite ? (
         <Button
           label="Escribir al anfitrión"

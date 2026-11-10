@@ -120,6 +120,8 @@ export const colors = {
   imageScrimTop: 'rgba(0, 0, 0, 0)',
   imageScrimMid: 'rgba(0, 0, 0, 0.20)',
   imageScrimBottom: 'rgba(0, 0, 0, 0.72)',
+  /** Top of profile banners, so light status bar icons stay readable. */
+  imageScrimStatusBar: 'rgba(0, 0, 0, 0.45)',
   glass: 'rgba(255, 255, 255, 0.90)',
   glassOnImage: 'rgba(255, 255, 255, 0.20)',
   glassBorderOnImage: 'rgba(255, 255, 255, 0.28)',

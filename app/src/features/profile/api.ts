@@ -29,6 +29,15 @@ export async function fetchProfile(userId: string): Promise<Profile> {
   return data
 }
 
+/** Anyone's public profile (photo, cover, name, bio, interests), e.g. a plan's host. */
+export function useProfile(userId: string) {
+  return useQuery({
+    queryKey: queryKeys.profile(userId),
+    queryFn: () => fetchProfile(userId),
+    enabled: userId !== '',
+  })
+}
+
 export function useMyProfile() {
   const userId = useUserId()
   return useQuery({
@@ -59,19 +68,37 @@ export function useUpdateProfile() {
   })
 }
 
-/** Compresses + uploads a new avatar, saves it on the profile and removes the old file. */
-export function useUploadAvatar() {
+/** Profile pictures: the round photo and the wide cover banner. */
+export type ProfileImageKind = 'avatar' | 'cover'
+const IMAGE_COLUMN = { avatar: 'avatar_url', cover: 'cover_url' } as const
+
+/** Best effort: an orphaned old file in storage is harmless. */
+function removeStoredImage(url: string | null) {
+  const path = storagePathFromPublicUrl('avatars', url)
+  if (!path) return
+  supabase.storage
+    .from('avatars')
+    .remove([path])
+    .then(({ error }) => {
+      if (error) logUnexpected(error)
+    })
+    .catch(logUnexpected)
+}
+
+/** Compresses + uploads a new avatar or cover, saves it on the profile and removes the old file. */
+export function useUploadProfileImage(kind: ProfileImageKind) {
   const userId = useUserId()
   const queryClient = useQueryClient()
+  const column = IMAGE_COLUMN[kind]
   return useMutation({
     mutationFn: async (image: PickedImage) => {
       const id = requireUserId(userId)
-      const previous = queryClient.getQueryData<Profile>(queryKeys.profile(id))?.avatar_url ?? null
+      const previous = queryClient.getQueryData<Profile>(queryKeys.profile(id))?.[column] ?? null
       const compressed = await compressImage(image)
       const uploaded = await uploadImage('avatars', id, compressed)
       const { data, error } = await supabase
         .from('profiles')
-        .update({ avatar_url: uploaded.publicUrl })
+        .update(kind === 'avatar' ? { avatar_url: uploaded.publicUrl } : { cover_url: uploaded.publicUrl })
         .eq('id', id)
         .select('*')
         .single()
@@ -79,17 +106,29 @@ export function useUploadAvatar() {
         await supabase.storage.from('avatars').remove([uploaded.path])
         throw error
       }
-      const oldPath = storagePathFromPublicUrl('avatars', previous)
-      if (oldPath) {
-        // Best effort: an orphaned old avatar is harmless.
-        supabase.storage
-          .from('avatars')
-          .remove([oldPath])
-          .then(({ error: removeError }) => {
-            if (removeError) logUnexpected(removeError)
-          })
-          .catch(logUnexpected)
-      }
+      removeStoredImage(previous)
+      return data
+    },
+    onSuccess: (profile) => queryClient.setQueryData(queryKeys.profile(profile.id), profile),
+  })
+}
+
+/** Removes the cover banner (the profile falls back to the brand background). */
+export function useRemoveCover() {
+  const userId = useUserId()
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async () => {
+      const id = requireUserId(userId)
+      const previous = queryClient.getQueryData<Profile>(queryKeys.profile(id))?.cover_url ?? null
+      const { data, error } = await supabase
+        .from('profiles')
+        .update({ cover_url: null })
+        .eq('id', id)
+        .select('*')
+        .single()
+      if (error) throw error
+      removeStoredImage(previous)
       return data
     },
     onSuccess: (profile) => queryClient.setQueryData(queryKeys.profile(profile.id), profile),

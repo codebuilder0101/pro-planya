@@ -97,6 +97,7 @@ const profile = {
     ? (experiences.find((e) => e.host_id === HOST_ID)?.host_full_name ?? 'Camila Fernández')
     : 'Catalina Rojas',
   avatar_url: null,
+  cover_url: null,
   bio: AS_HOST
     ? 'Guía local en Temuco. Organizo caminatas y panoramas al aire libre.'
     : 'Amo el trekking y los cafés de especialidad.',

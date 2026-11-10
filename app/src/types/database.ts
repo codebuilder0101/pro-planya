@@ -58,6 +58,7 @@ export type Database = {
           role: Database['public']['Enums']['user_role']
           full_name: string
           avatar_url: string | null
+          cover_url: string | null
           bio: string
           interests: string[]
           city: string | null
@@ -70,6 +71,7 @@ export type Database = {
           role?: Database['public']['Enums']['user_role']
           full_name?: string
           avatar_url?: string | null
+          cover_url?: string | null
           bio?: string
           interests?: string[]
           city?: string | null
@@ -82,6 +84,7 @@ export type Database = {
           role?: Database['public']['Enums']['user_role']
           full_name?: string
           avatar_url?: string | null
+          cover_url?: string | null
           bio?: string
           interests?: string[]
           city?: string | null
