@@ -36,9 +36,11 @@ import { statusBadge } from '@/features/experiences/components/experience-card'
 import { useStartConversation } from '@/features/chat/api'
 import { useFavorites } from '@/features/experiences/use-favorites'
 import { useMyProfile, useUserId } from '@/features/profile/api'
+import { useExperienceReviews, useMyReviews } from '@/features/reviews/api'
+import { Stars } from '@/features/reviews/star-input'
 import { useBlockUser } from '@/features/safety/api'
 import { openSafetyMenu } from '@/features/safety/safety-menu'
-import { capitalize, formatDuration, formatLongDate, formatTimeRange } from '@/lib/dates'
+import { capitalize, formatDuration, formatLongDate, formatShortDate, formatTimeRange } from '@/lib/dates'
 import { toUserMessage } from '@/lib/errors'
 import { formatDistanceKm, formatPrice, formatSeatsLeft, seatsLeft } from '@/lib/format'
 import { useViewerLocation } from '@/lib/location'
@@ -287,6 +289,8 @@ function Content({ experience: e }: { experience: ExperienceDetail }) {
 
       <Participants id={e.id} />
 
+      {e.rating_count > 0 ? <Reviews experience={e} /> : null}
+
       <Section title="Punto de encuentro">
         <View style={styles.mapCard}>
           <View style={styles.mapClip} pointerEvents="none">
@@ -467,6 +471,40 @@ function Participants({ id }: { id: string }) {
   )
 }
 
+function Reviews({ experience: e }: { experience: ExperienceDetail }) {
+  const reviews = useExperienceReviews(e.id)
+  const list = reviews.data ?? []
+  return (
+    <Section title="Reseñas">
+      <Rating average={e.rating_avg} count={e.rating_count} long size="md" />
+      {reviews.isPending ? <Skeleton height={64} /> : null}
+      {list.map((r) => (
+        <View key={r.id} style={styles.review}>
+          <View style={styles.reviewHead}>
+            <Avatar uri={r.author.avatarUrl} name={r.author.fullName} size={32} />
+            <View style={styles.flex}>
+              <Text variant="subhead" numberOfLines={1}>
+                {r.author.fullName || 'Usuario'}
+              </Text>
+              <View style={styles.reviewMeta}>
+                <Stars value={r.rating} size={12} />
+                <Text variant="caption" color="textTertiary">
+                  {formatShortDate(new Date(r.createdAt))}
+                </Text>
+              </View>
+            </View>
+          </View>
+          {r.comment ? (
+            <Text variant="body" color="textSecondary">
+              {r.comment}
+            </Text>
+          ) : null}
+        </View>
+      ))}
+    </Section>
+  )
+}
+
 // ---------------------------------------------------------------- booking bar
 function BookingBar({ experience: e }: { experience: ExperienceDetail }) {
   const insets = useSafeAreaInsets()
@@ -476,6 +514,8 @@ function BookingBar({ experience: e }: { experience: ExperienceDetail }) {
   // Read the clock once per mount (render must stay pure).
   const [mountedAt] = useState(() => Date.now())
   const started = new Date(e.starts_at).getTime() <= mountedAt
+  const ended = new Date(e.ends_at).getTime() <= mountedAt
+  const myReviews = useMyReviews()
   const isHost = e.host_id === userId
   const joined = e.my_booking_id != null
 
@@ -508,6 +548,17 @@ function BookingBar({ experience: e }: { experience: ExperienceDetail }) {
         onPress={() => router.push({ pathname: '/plan/[id]/edit', params: { id: e.id } })}
       />
     )
+  else if (ended && joined && myReviews.data && !myReviews.data.has(e.id))
+    action = (
+      <Button
+        label="Calificar"
+        icon="star-outline"
+        fullWidth={false}
+        testID="detail-review"
+        onPress={() => router.push({ pathname: '/review', params: { experienceId: e.id, title: e.title } })}
+      />
+    )
+  else if (ended) action = <Button label="Finalizado" disabled fullWidth={false} />
   else if (started) action = <Button label="Ya comenzó" disabled fullWidth={false} />
   else if (isHost) action = <Button label="Es tu plan" variant="secondary" disabled fullWidth={false} />
   else if (joined)
@@ -673,6 +724,14 @@ const styles = StyleSheet.create({
   },
   badges: { flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap' },
   ratingRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  review: {
+    gap: spacing.sm,
+    paddingTop: spacing.md,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.border,
+  },
+  reviewHead: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  reviewMeta: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   facts: {
     marginTop: spacing.sm,
     padding: spacing.lg,

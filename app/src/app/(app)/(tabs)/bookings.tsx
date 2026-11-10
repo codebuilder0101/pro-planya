@@ -9,9 +9,11 @@ import { SegmentedControl } from '@/components/ui/segmented-control'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Text } from '@/components/ui/text'
 import { splitBookings, useCancelMyBooking, useMyBookings, type MyBooking } from '@/features/bookings/api'
-import { BookingCard } from '@/features/bookings/booking-card'
+import { BookingAction, BookingCard } from '@/features/bookings/booking-card'
 import { useCategoryMap } from '@/features/categories/api'
 import { useStartConversation } from '@/features/chat/api'
+import { useMyReviews } from '@/features/reviews/api'
+import { Stars } from '@/features/reviews/star-input'
 import { confirmAction } from '@/lib/dialogs'
 import { toUserMessage } from '@/lib/errors'
 import { shape, spacing } from '@/theme/tokens'
@@ -29,6 +31,7 @@ export default function BookingsScreen() {
   const categories = useCategoryMap()
   const cancel = useCancelMyBooking()
   const start = useStartConversation()
+  const myReviews = useMyReviews()
   const [tab, setTab] = useState<Tab>('upcoming')
   // Read the clock once per mount (render must stay pure).
   const [now] = useState(() => Date.now())
@@ -119,6 +122,11 @@ export default function BookingsScreen() {
                   }
                   onMessage={() => void onMessage(b)}
                   onCancel={() => void onCancel(b)}
+                  footer={
+                    tab === 'past' ? (
+                      <ReviewAction booking={b} rating={myReviews.data?.get(b.experience.id)} />
+                    ) : undefined
+                  }
                 />
               ))}
             </View>
@@ -129,7 +137,41 @@ export default function BookingsScreen() {
   )
 }
 
+/** Past plan: "Calificar plan", or the rating already given. */
+function ReviewAction({ booking: b, rating }: { booking: MyBooking; rating: number | undefined }) {
+  if (rating) {
+    return (
+      <View style={styles.rated} accessible accessibilityLabel={`Calificaste este plan con ${rating} de 5`}>
+        <Text variant="subhead" color="textSecondary">
+          Tu calificación
+        </Text>
+        <Stars value={rating} />
+      </View>
+    )
+  }
+  return (
+    <BookingAction
+      icon="star-outline"
+      label="Calificar plan"
+      onPress={() =>
+        router.push({
+          pathname: '/review',
+          params: { experienceId: b.experience.id, title: b.experience.title },
+        })
+      }
+    />
+  )
+}
+
 const styles = StyleSheet.create({
+  rated: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    minHeight: 48,
+  },
   header: { marginBottom: spacing.lg, gap: spacing.xxs },
   root: { gap: spacing.lg },
   list: { gap: spacing.md },

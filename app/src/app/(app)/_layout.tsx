@@ -53,6 +53,17 @@ export default function AppLayout() {
           }}
         />
         <Stack.Screen
+          name="review"
+          options={{
+            headerShown: false,
+            presentation: 'formSheet',
+            sheetAllowedDetents: [0.9],
+            sheetGrabberVisible: true,
+            sheetCornerRadius: shape.sheet,
+            contentStyle: { backgroundColor: colors.surface },
+          }}
+        />
+        <Stack.Screen
           name="report"
           options={{
             headerShown: false,

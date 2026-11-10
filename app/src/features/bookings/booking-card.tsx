@@ -37,7 +37,7 @@ type Props = {
   footer?: ReactNode
 }
 
-function Action({
+export function BookingAction({
   icon,
   label,
   onPress,
@@ -120,9 +120,14 @@ export function BookingCard({
       </PressableScale>
       {state.active ? (
         <View style={styles.actions}>
-          <Action icon="chatbubble-ellipses-outline" label="Escribir" onPress={onMessage} disabled={busy} />
+          <BookingAction
+            icon="chatbubble-ellipses-outline"
+            label="Escribir"
+            onPress={onMessage}
+            disabled={busy}
+          />
           <View style={styles.divider} />
-          <Action
+          <BookingAction
             icon="close-circle-outline"
             label="Cancelar reserva"
             onPress={onCancel}
@@ -130,7 +135,7 @@ export function BookingCard({
             disabled={busy}
           />
         </View>
-      ) : footer ? (
+      ) : footer && e.status !== 'cancelled' ? (
         <View style={styles.actions}>{footer}</View>
       ) : null}
     </View>
