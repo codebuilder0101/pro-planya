@@ -42,6 +42,15 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   plugins: [
     'expo-router',
+    // Release builds are minified by R8; keep Room databases (used by WorkManager) or the app crashes on start.
+    [
+      'expo-build-properties',
+      {
+        android: {
+          extraProguardRules: '-keep class * extends androidx.room.RoomDatabase { <init>(); }',
+        },
+      },
+    ],
     // Maps: Google Maps on Android (key restricted to the package + signing SHA-1), Apple Maps on iOS.
     ['react-native-maps', googleMapsAndroidKey ? { androidGoogleMapsApiKey: googleMapsAndroidKey } : {}],
     'expo-font',
