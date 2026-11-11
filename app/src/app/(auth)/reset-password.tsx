@@ -13,6 +13,7 @@ import { useAuth } from '@/features/auth/auth-provider'
 import { toUserMessage } from '@/lib/errors'
 import {
   emailSchema,
+  RESET_CODE_MAX,
   resetPasswordSchema,
   type ResetPasswordOutput,
   type ResetPasswordValues,
@@ -95,7 +96,7 @@ export default function ResetPasswordScreen() {
       <View style={styles.header}>
         <Text variant="title1">Crea una contraseña nueva</Text>
         <Text variant="body" color="textSecondary">
-          Si existe una cuenta con {email}, te enviamos un código de 6 dígitos. Revisa también la carpeta de
+          Si existe una cuenta con {email}, te enviamos un código por correo. Revisa también la carpeta de
           spam.
         </Text>
       </View>
@@ -107,14 +108,14 @@ export default function ResetPasswordScreen() {
             <TextField
               label="Código"
               value={field.value}
-              onChangeText={(t) => field.onChange(t.replace(/\D/g, '').slice(0, 6))}
+              onChangeText={(t) => field.onChange(t.replace(/\D/g, '').slice(0, RESET_CODE_MAX))}
               onBlur={field.onBlur}
               error={fieldState.error?.message}
-              placeholder="123456"
+              placeholder="Código del correo"
               keyboardType="number-pad"
               autoComplete="one-time-code"
               textContentType="oneTimeCode"
-              maxLength={6}
+              maxLength={RESET_CODE_MAX}
               returnKeyType="next"
               submitBehavior="submit"
               onSubmitEditing={() => passwordRef.current?.focus()}

@@ -53,7 +53,7 @@ describe('signUpSchema', () => {
 })
 
 describe('resetPasswordSchema', () => {
-  it('requires a 6-digit code and matching passwords', () => {
+  it('requires a 6 to 8 digit code and matching passwords', () => {
     expect(
       resetPasswordSchema.safeParse({ code: '123456', password: 'clave1234', confirmPassword: 'clave1234' })
         .success,
@@ -62,7 +62,18 @@ describe('resetPasswordSchema', () => {
       firstError(
         resetPasswordSchema.safeParse({ code: '12345', password: 'clave1234', confirmPassword: 'clave1234' }),
       ),
-    ).toBe('El código tiene 6 dígitos.')
+    ).toBe('Ingresa el código completo que te enviamos.')
+    expect(
+      resetPasswordSchema.safeParse({ code: '12345678', password: 'clave1234', confirmPassword: 'clave1234' })
+        .success,
+    ).toBe(true)
+    expect(
+      resetPasswordSchema.safeParse({
+        code: '123456789',
+        password: 'clave1234',
+        confirmPassword: 'clave1234',
+      }).success,
+    ).toBe(false)
     expect(
       firstError(
         resetPasswordSchema.safeParse({

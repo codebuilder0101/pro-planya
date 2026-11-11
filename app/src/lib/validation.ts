@@ -53,12 +53,15 @@ export const forgotPasswordSchema = z.object({ email: emailSchema })
 export type ForgotPasswordValues = z.input<typeof forgotPasswordSchema>
 export type ForgotPasswordOutput = z.output<typeof forgotPasswordSchema>
 
+/** Recovery codes are 6 digits (8 if the server is set to the Supabase default). */
+export const RESET_CODE_MAX = 8
+
 export const resetPasswordSchema = z
   .object({
     code: z
       .string()
       .trim()
-      .regex(/^\d{6}$/, 'El código tiene 6 dígitos.'),
+      .regex(/^\d{6,8}$/, 'Ingresa el código completo que te enviamos.'),
     password: newPasswordSchema,
     confirmPassword: z.string().min(1, 'Repite la nueva contraseña.'),
   })
